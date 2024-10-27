@@ -1,0 +1,17 @@
+{
+  "name": "monorepo-matrix",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build index.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.0",
+    "@actions/github": "^6.0.0",
+    "wildcard-match": "^5.1.3"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.2"
+  }
+}
