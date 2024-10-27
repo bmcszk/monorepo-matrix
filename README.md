@@ -15,22 +15,26 @@ The `monorepo-matrix` Github Action is checking git commits and detects changes 
     ```yaml
           - name: Create matrix
             id: create-matrix
-            uses: discoveryinc-tvn/TVN-github-actions/actions/monorepo-matrix@feature/CWP-2653-helm-gha
+            uses: bmcszk/monorepo-matrix@v1
             with:
               build-all: ${{ inputs.build-all }}
               map: |-
-                pkg/** -> consumer|producer|importer_redge
-                go.mod -> consumer|producer|importer_redge
-                go.sum -> consumer|producer|importer_redge
-                Dockerfile -> consumer|producer|importer_redge
+                pkg/** -> consumer|producer
+                go.mod -> consumer|producer
+                go.sum -> consumer|producer
+                Dockerfile -> consumer|producer
                 services/consumer/** -> consumer
                 services/producer/** -> producer
-                services/importer_redge/** -> importer_redge
     ```
     Where `map` line is a value that stores changes detection rules in form of:
     ```yaml
     git|paths|changed|separated|by|pipe -> module|names|separated|by|pipe
     ```
+    The above can return:
+    - `[]` if there are no changes in paths
+    - `[ 'producer' ]` - change only in producer
+    - `[ 'consumer' ]` - change only in consumer
+    - `[ 'producer', 'consumer' ]` - change in both
 
     The output values can be used as build matrix:
     ```yaml
@@ -43,25 +47,23 @@ The `monorepo-matrix` Github Action is checking git commits and detects changes 
     ```yaml
           - name: Create matrix
             id: create-matrix
-            uses: discoveryinc-tvn/TVN-github-actions/actions/monorepo-matrix@feature/CWP-2653-helm-gha
+            uses: bmcszk/monorepo-matrix@v1
             with:
               build-all: ${{ inputs.build-all }}
               map: |-
-                pkg|go.mod|go.sum|Dockerfile -> consumer|producer|importer_redge
+                pkg|go.mod|go.sum|Dockerfile -> consumer|producer
                 services/consumer -> consumer
                 services/producer -> producer
-                services/importer_redge -> importer_redge
     ```
 
-3. This returns `[ true ]` if there are changes detected in path `helm`; and `[]` otherwise:
+3. This returns `[ 'true' ]` if there are changes detected in path `helm`; and `[]` otherwise:
     ```yaml
           - name: Create matrix
             id: create-matrix
-            uses: discoveryinc-tvn/TVN-github-actions/actions/monorepo-matrix@feature/CWP-2653-helm-gha
+            uses: bmcszk/monorepo-matrix@v1
             with:
               build-all: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false'}}
-              map: |-
-                helm -> true
+              map: helm -> true
     ```
 
 ### Build
