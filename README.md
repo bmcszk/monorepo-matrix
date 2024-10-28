@@ -10,6 +10,16 @@ The `monorepo-matrix` Github Action is checking git commits and detects changes 
 ### Outputs
 - `result` - list of modules that have changes in the given paths. Returns `[]` if there are no changes in the given paths.
 
+### Prerequisites
+Checkout code before using the action.
+```yaml
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+```
+`fetch-depth: 2` is required to fetch two last commits in the history of the monorepo. 
+(In some cases it is better to use `fetch-depth: 0`.)
 ### Sample usage
 1. Sample action:
     ```yaml
@@ -38,6 +48,7 @@ The `monorepo-matrix` Github Action is checking git commits and detects changes 
 
     The output values can be used as build matrix:
     ```yaml
+        if: needs.create-matrix.outputs.result != '[]'
         strategy:
           matrix:
             service: ${{fromJson(needs.create-matrix.outputs.result)}}
