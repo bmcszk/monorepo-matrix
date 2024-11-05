@@ -32022,11 +32022,14 @@ function getAllValues(map) {
 
 function getLastSuccessfulRun() {
     const payload = github.context.payload;
+    github.rest.actions.listWorkflowRuns()
     const octokit = github.getOctokit(core.getInput('github-token'));
     let result = null;
-    octokit.actions.listWorkflowRuns({
-        owner: payload.repository_owner,
-        repo: payload.repository.split('/')[1],
+    octokit.rest.listWorkflowRuns({
+        // owner: payload.repository_owner,
+        // repo: payload.repository.split('/')[1],
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
         status: "success",
         branch: (payload.head_ref || payload.ref_name),
         per_page: 1
