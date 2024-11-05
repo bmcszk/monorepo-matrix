@@ -35,7 +35,6 @@ function getAllValues(map) {
 
 function getLastSuccessfulRun() {
     const payload = github.context.payload;
-    github.rest.actions.listWorkflowRuns()
     const octokit = github.getOctokit(core.getInput('github-token'));
     let result = null;
     octokit.rest.listWorkflowRuns({
