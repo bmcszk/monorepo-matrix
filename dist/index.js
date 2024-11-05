@@ -32038,10 +32038,10 @@ async function getLastSuccessfulRun() {
     return res.data.workflow_runs[0].head_commit.id;
 }
 
-function getBefore() {
+async function getBefore() {
     const payload = github.context.payload;
     try {
-        return getLastSuccessfulRun();
+        return await getLastSuccessfulRun();
     } catch (error) {
         console.log(error.message);
     }
@@ -32098,7 +32098,7 @@ async function run() {
     if (buildAll) {
         result = getAllValues(map);
     } else {
-        lines = await fetchGitChanges(getBefore(), getAfter());
+        lines = await fetchGitChanges(await getBefore(), getAfter());
         result = matchGitChanges(map, lines);
     }
     console.log('result', result);
