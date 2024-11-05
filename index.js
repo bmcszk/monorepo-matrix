@@ -33,28 +33,39 @@ function getAllValues(map) {
     return [...resultSet];
 }
 
-async function getLastSuccessfulRun() {
-    const payload = github.context.payload;
-    const octokit = github.getOctokit(core.getInput('github-token'));
+function getWorkflowFile() {
+    let ref = process.env.GITHUB_WORKFLOW_REF;
+    if (ref.includes('@')) {
+        ref = ref.split('@')[0];
+    }
+    if (ref.includes('/')) {
+        const array = ref.split('/');
+        ref = array[array.length - 1];
+    }
+    return ref;
+}
 
-    console.log('context', github.context);
-    console.log('branch', process.env.GITHUB_HEAD_REF, process.env.GITHUB_REF);
-    console.log('workflow_id', payload.run_id);
-
-    let branch = null;
+function getBranch() {
     if (process.env.GITHUB_HEAD_REF) {
-        branch = process.env.GITHUB_HEAD_REF;
+        return process.env.GITHUB_HEAD_REF;
     } else if (process.env.GITHUB_REF && !process.env.GITHUB_REF.startsWith('refs/tags')) {
         const match = /refs\/heads\/(.*)/g.exec(process.env.GITHUB_REF);
-        branch = match ? match[1] : null;
+        return match ? match[1] : null;
     }
+}
+
+async function getLastSuccessfulRun() {
+    const octokit = github.getOctokit(core.getInput('github-token'));
+
+    console.log('branch', getBranch());
+    console.log('workflow_id', getWorkflowFile());
 
     const res = await octokit.rest.actions.listWorkflowRuns({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         status: "success",
-        branch: branch,
-        workflow_id: github.context.workflow,
+        branch: getBranch(),
+        workflow_id: getWorkflowFile(),
         per_page: 1
     });
     if (res.data.workflow_runs.length === 0) {
