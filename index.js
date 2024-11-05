@@ -34,6 +34,7 @@ function getAllValues(map) {
 }
 
 async function getLastSuccessfulRun() {
+    console.log('context', github.context);
     const payload = github.context.payload;
     const octokit = github.getOctokit(core.getInput('github-token'));
     const res = await octokit.rest.actions.listWorkflowRuns({
@@ -43,6 +44,7 @@ async function getLastSuccessfulRun() {
         repo: github.context.repo.repo,
         status: "success",
         branch: (payload.head_ref || payload.ref_name),
+        workflow_id: payload.run_id,
         per_page: 1
     });
     if (res.data.workflow_runs.length === 0) {
@@ -56,7 +58,7 @@ async function getBefore() {
     try {
         return await getLastSuccessfulRun();
     } catch (error) {
-        console.log(error.message);
+        console.log("getLastSuccessfulRun()", error.message);
     }
     if (payload.before) {
         return payload.before;
