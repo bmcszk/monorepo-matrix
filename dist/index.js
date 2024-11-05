@@ -32021,14 +32021,19 @@ function getAllValues(map) {
 }
 
 async function getLastSuccessfulRun() {
-    console.log('context', github.context);
     const payload = github.context.payload;
     const octokit = github.getOctokit(core.getInput('github-token'));
+
+    console.log('context', github.context);
+    console.log('context.repo', github.context.repo);
+    console.log('branch', (payload.head_ref || payload.ref_name));
+    console.log('workflow_id', payload.run_id);
+
     const res = await octokit.rest.actions.listWorkflowRuns({
         // owner: payload.repository_owner,
         // repo: payload.repository.split('/')[1],
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
+        owner: payload.repository.full_name.split('/')[0],
+        repo: payload.repository.full_name.split('/')[1],
         status: "success",
         branch: (payload.head_ref || payload.ref_name),
         workflow_id: payload.run_id,
@@ -32037,6 +32042,7 @@ async function getLastSuccessfulRun() {
     if (res.data.workflow_runs.length === 0) {
         throw new Error('No previous workflow run found');
     }
+    console.log('result', res.data);
     return res.data.workflow_runs[0].head_commit.id;
 }
 
