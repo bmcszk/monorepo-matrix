@@ -33,11 +33,10 @@ function getAllValues(map) {
     return [...resultSet];
 }
 
-function getLastSuccessfulRun() {
+async function getLastSuccessfulRun() {
     const payload = github.context.payload;
     const octokit = github.getOctokit(core.getInput('github-token'));
-    let result = null;
-    octokit.rest.actions.listWorkflowRuns({
+    const res = await octokit.rest.actions.listWorkflowRuns({
         // owner: payload.repository_owner,
         // repo: payload.repository.split('/')[1],
         owner: github.context.repo.owner,
@@ -45,17 +44,11 @@ function getLastSuccessfulRun() {
         status: "success",
         branch: (payload.head_ref || payload.ref_name),
         per_page: 1
-    }).then(res => {
-        if (res.data.workflow_runs.length === 0) {
-            throw new Error('No previous workflow run found');
-        }
-        result = res.data.workflow_runs[0].head_commit.id;
-        // const sortedHeadCommits = headCommits.sort((a, b) =>
-        //     a.timestamp - b.timestamp
-        // );
-        // return sortedHeadCommits[sortedHeadCommits.length - 1].id;
-    })
-    return result;
+    });
+    if (res.data.workflow_runs.length === 0) {
+        throw new Error('No previous workflow run found');
+    }
+    return res.data.workflow_runs[0].head_commit.id;
 }
 
 function getBefore() {
