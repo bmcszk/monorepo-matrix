@@ -32024,7 +32024,7 @@ function getLastSuccessfulRun() {
     const payload = github.context.payload;
     const octokit = github.getOctokit(core.getInput('github-token'));
     let result = null;
-    octokit.rest.listWorkflowRuns({
+    octokit.rest.actions.listWorkflowRuns({
         // owner: payload.repository_owner,
         // repo: payload.repository.split('/')[1],
         owner: github.context.repo.owner,
