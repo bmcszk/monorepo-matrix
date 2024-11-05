@@ -32025,18 +32025,23 @@ async function getLastSuccessfulRun() {
     const octokit = github.getOctokit(core.getInput('github-token'));
 
     console.log('context', github.context);
-    console.log('context.repo', github.context.repo);
-    console.log('branch', (payload.head_ref || payload.ref_name));
+    console.log('branch', process.env.GITHUB_HEAD_REF, process.env.GITHUB_REF);
     console.log('workflow_id', payload.run_id);
 
+    let branch = null;
+    if (process.env.GITHUB_HEAD_REF) {
+        branch = process.env.GITHUB_HEAD_REF;
+    } else if (process.env.GITHUB_REF && !process.env.GITHUB_REF.startsWith('refs/tags')) {
+        const match = /refs\/heads\/(.*)/g.exec(process.env.GITHUB_REF);
+        branch = match ? match[1] : null;
+    }
+
     const res = await octokit.rest.actions.listWorkflowRuns({
-        // owner: payload.repository_owner,
-        // repo: payload.repository.split('/')[1],
-        owner: payload.repository.full_name.split('/')[0],
-        repo: payload.repository.full_name.split('/')[1],
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
         status: "success",
-        branch: (payload.head_ref || payload.ref_name),
-        workflow_id: payload.run_id,
+        branch: branch,
+        workflow_id: github.context.workflow,
         per_page: 1
     });
     if (res.data.workflow_runs.length === 0) {
