@@ -4,6 +4,7 @@
 The `monorepo-matrix` Github Action is checking git commits and detects changes in the given paths.
 
 ### Inputs
+- `github-token` - `${{ secrets.GITHUB_TOKEN }}` - Github token to access private repositories.
 - `build-all` - boolean flag to build all packages in monorepo. Default value is false.
 - `map` - list of paths and their owners (modules).
 
@@ -20,6 +21,7 @@ Checkout code before using the action.
 ```
 `fetch-depth: 2` is required to fetch two last commits in the history of the monorepo. 
 (In some cases it is better to use `fetch-depth: 0`.)
+
 ### Sample usage
 1. Sample action:
     ```yaml

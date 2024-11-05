@@ -32020,25 +32020,59 @@ function getAllValues(map) {
     return [...resultSet];
 }
 
-async function fetchGitChanges() {
-    let before = 'HEAD^1';
-    let after = 'HEAD';
+function getLastSuccessfulRun() {
     const payload = github.context.payload;
-    if (payload.before && payload.after) {
-        before = payload.before;
-        after = payload.after;
-    }
+    const octokit = github.getOctokit(core.getInput('github-token'));
+    let result = null;
+    octokit.actions.listWorkflowRunsForRepo({
+        owner: payload.repository_owner,
+        repo: payload.repository.split('/')[1],
+        status: "success",
+        branch: (payload.head_ref || payload.ref_name),
+        per_page: 1
+    }).then(res => {
+        if (res.data.workflow_runs.length === 0) {
+            throw new Error('No previous workflow run found');
+        }
+        result = res.data.workflow_runs[0].head_commit.id;
+        // const sortedHeadCommits = headCommits.sort((a, b) =>
+        //     a.timestamp - b.timestamp
+        // );
+        // return sortedHeadCommits[sortedHeadCommits.length - 1].id;
+    })
+    return result;
+}
 
+function getBefore() {
+    const payload = github.context.payload;
+    try {
+        return getLastSuccessfulRun();
+    } catch (error) {
+        console.log(error.message);
+    }
+    if (payload.before) {
+        return payload.before;
+    }
+    return 'HEAD^1';
+}
+
+function getAfter() {
+    const payload = github.context.payload;
+    if (payload.after) {
+        return payload.after;
+    }
+    return 'HEAD';
+}
+
+async function fetchGitChanges(before, after) {
     let lines = [];
     const options = {
         listeners: {
             stdout: (data) => {
-                data.toString().split('\n').forEach((line) => {
-                    lines.push(line);
-                })
+                lines = data.toString().split('\n');
             },
             stderr: (data) => {
-                console.log(data.toString());
+                core.setFailed(data.toString());
             }
         }
     };
@@ -32069,7 +32103,7 @@ async function run() {
     if (buildAll) {
         result = getAllValues(map);
     } else {
-        lines = await fetchGitChanges();
+        lines = await fetchGitChanges(getBefore(), getAfter());
         result = matchGitChanges(map, lines);
     }
     console.log('result', result);
