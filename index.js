@@ -56,10 +56,6 @@ function getBranch() {
 
 async function getLastSuccessfulRun() {
     const octokit = github.getOctokit(core.getInput('github-token'));
-
-    console.log('branch', getBranch());
-    console.log('workflow_id', getWorkflowFile());
-
     const res = await octokit.rest.actions.listWorkflowRuns({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
@@ -71,8 +67,9 @@ async function getLastSuccessfulRun() {
     if (res.data.workflow_runs.length === 0) {
         throw new Error('No previous workflow run found');
     }
-    console.log('result', res.data);
-    return res.data.workflow_runs[0].head_commit.id;
+    const result = res.data.workflow_runs[0].head_commit.id;
+    console.log('last successful run commit: ', result);
+    return result;
 }
 
 async function getBefore() {
@@ -83,6 +80,7 @@ async function getBefore() {
         console.log("getLastSuccessfulRun()", error.message);
     }
     if (payload.before) {
+        console.log('last commit: ', payload.before);
         return payload.before;
     }
     return 'HEAD^1';
