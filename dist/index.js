@@ -32041,12 +32041,8 @@ function getBranch() {
     }
 }
 
-async function getLastSuccessfulRun() {
-    const octokit = github.getOctokit(core.getInput('github-token'));
-
-    console.log('branch', getBranch());
-    console.log('workflow_id', getWorkflowFile());
-
+async function getLastSuccessfulRun(token) {
+    const octokit = github.getOctokit(token);
     const res = await octokit.rest.actions.listWorkflowRuns({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
@@ -32058,18 +32054,20 @@ async function getLastSuccessfulRun() {
     if (res.data.workflow_runs.length === 0) {
         throw new Error('No previous workflow run found');
     }
-    console.log('result', res.data);
-    return res.data.workflow_runs[0].head_commit.id;
+    const result = res.data.workflow_runs[0].head_commit.id;
+    console.log('last successful run commit: ', result);
+    return result;
 }
 
-async function getBefore() {
+async function getBefore(token) {
     const payload = github.context.payload;
     try {
-        return await getLastSuccessfulRun();
+        return await getLastSuccessfulRun(token);
     } catch (error) {
         console.log("getLastSuccessfulRun()", error.message);
     }
     if (payload.before) {
+        console.log('last commit: ', payload.before);
         return payload.before;
     }
     return 'HEAD^1';
@@ -32117,12 +32115,12 @@ function matchGitChanges(map, lines) {
 async function run() {
     const buildAll = core.getInput('build-all') === 'true';
     const map = parseMap(core.getInput('map'));
-    console.log('map:', map);
+    const token = core.getInput('github-token');
     let result;
     if (buildAll) {
         result = getAllValues(map);
     } else {
-        lines = await fetchGitChanges(await getBefore(), getAfter());
+        lines = await fetchGitChanges(await getBefore(token), getAfter());
         result = matchGitChanges(map, lines);
     }
     console.log('result', result);

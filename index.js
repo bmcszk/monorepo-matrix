@@ -54,8 +54,8 @@ function getBranch() {
     }
 }
 
-async function getLastSuccessfulRun() {
-    const octokit = github.getOctokit(core.getInput('github-token'));
+async function getLastSuccessfulRun(token) {
+    const octokit = github.getOctokit(token);
     const res = await octokit.rest.actions.listWorkflowRuns({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
@@ -72,10 +72,10 @@ async function getLastSuccessfulRun() {
     return result;
 }
 
-async function getBefore() {
+async function getBefore(token) {
     const payload = github.context.payload;
     try {
-        return await getLastSuccessfulRun();
+        return await getLastSuccessfulRun(token);
     } catch (error) {
         console.log("getLastSuccessfulRun()", error.message);
     }
@@ -128,12 +128,12 @@ function matchGitChanges(map, lines) {
 async function run() {
     const buildAll = core.getInput('build-all') === 'true';
     const map = parseMap(core.getInput('map'));
-    console.log('map:', map);
+    const token = core.getInput('github-token');
     let result;
     if (buildAll) {
         result = getAllValues(map);
     } else {
-        lines = await fetchGitChanges(await getBefore(), getAfter());
+        lines = await fetchGitChanges(await getBefore(token), getAfter());
         result = matchGitChanges(map, lines);
     }
     console.log('result', result);
