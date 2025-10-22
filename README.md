@@ -68,7 +68,33 @@ Checkout code before using the action.
                 services/producer -> producer
     ```
 
-3. This returns `[ 'true' ]` if there are changes detected in path `helm`; and `[]` otherwise:
+3. Using `contains()` to check for specific modules:
+    ```yaml
+          - name: Create matrix
+            id: create-matrix
+            uses: bmcszk/monorepo-matrix@v1
+            with:
+              build-all: ${{ inputs.build-all }}
+              map: |-
+                services/consumer/** -> consumer
+                services/producer/** -> producer
+                docs/** -> docs
+
+          - name: Deploy consumer
+            if: contains(needs.create-matrix.outputs.result, '"consumer"')
+            run: echo "Deploy consumer service"
+
+          - name: Deploy producer
+            if: contains(needs.create-matrix.outputs.result, '"producer"')
+            run: echo "Deploy producer service"
+
+          - name: Update docs
+            if: contains(needs.create-matrix.outputs.result, '"docs"')
+            run: echo "Update documentation"
+    ```
+    This allows you to trigger specific jobs only when certain modules have changed.
+
+4. This returns `[ 'true' ]` if there are changes detected in path `helm`; and `[]` otherwise:
     ```yaml
           - name: Create matrix
             id: create-matrix
