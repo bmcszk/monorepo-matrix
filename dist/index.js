@@ -45,6 +45,9 @@ function getAllValues(map) {
 
 function getWorkflowFile() {
     let ref = process.env.GITHUB_WORKFLOW_REF;
+    if (!ref) {
+        return ref;
+    }
     if (ref.includes('@')) {
         ref = ref.split('@')[0];
     }
@@ -71,7 +74,7 @@ function getBranch() {
 async function getLastSuccessfulRun(token) {
     const { owner, repo } = github.context.repo;
     if (!owner || !repo) {
-        throw new Error('GitHub context repository information not available');
+        throw new Error('GitHub context the repository information not available');
     }
 
     const octokit = github.getOctokit(token);
@@ -81,7 +84,7 @@ async function getLastSuccessfulRun(token) {
         status: 'success',
         branch: getBranch(),
         workflow_id: getWorkflowFile(),
-        perPage: 1,
+        per_page: 1,
     });
     if (res.data.workflow_runs.length === 0) {
         throw new Error('No previous workflow run found');
