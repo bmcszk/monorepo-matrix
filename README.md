@@ -19,7 +19,7 @@ Checkout code before using the action.
         with:
           fetch-depth: 0
 ```
-`fetch-depth: 0` is recommended to have all the changes from repo.
+`fetch-depth: 0` is recommended to have all the changes from the repository.
 
 ### Sample usage
 1. Sample action:
