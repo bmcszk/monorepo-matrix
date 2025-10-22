@@ -70,27 +70,48 @@ Checkout code before using the action.
 
 3. Using `contains()` to check for specific modules:
     ```yaml
+    jobs:
+      detect-changes:
+        runs-on: ubuntu-latest
+        outputs:
+          changed-services: ${{ steps.matrix.outputs.result }}
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
           - name: Create matrix
-            id: create-matrix
+            id: matrix
             uses: bmcszk/monorepo-matrix@v1
             with:
-              build-all: ${{ inputs.build-all }}
               map: |-
                 services/consumer/** -> consumer
                 services/producer/** -> producer
                 docs/** -> docs
 
+      deploy-consumer:
+        needs: detect-changes
+        if: contains(needs.detect-changes.outputs.changed-services, '"consumer"')
+        runs-on: ubuntu-latest
+        steps:
           - name: Deploy consumer
-            if: contains(needs.create-matrix.outputs.result, '"consumer"')
-            run: echo "Deploy consumer service"
+            run: echo "Deploying consumer service"
 
+      deploy-producer:
+        needs: detect-changes
+        if: contains(needs.detect-changes.outputs.changed-services, '"producer"')
+        runs-on: ubuntu-latest
+        steps:
           - name: Deploy producer
-            if: contains(needs.create-matrix.outputs.result, '"producer"')
-            run: echo "Deploy producer service"
+            run: echo "Deploying producer service"
 
+      update-docs:
+        needs: detect-changes
+        if: contains(needs.detect-changes.outputs.changed-services, '"docs"')
+        runs-on: ubuntu-latest
+        steps:
           - name: Update docs
-            if: contains(needs.create-matrix.outputs.result, '"docs"')
-            run: echo "Update documentation"
+            run: echo "Updating documentation"
     ```
     This allows you to trigger specific jobs only when certain modules have changed.
 
