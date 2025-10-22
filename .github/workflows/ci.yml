@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, feature/*, feat/*, fix/*]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Run tests
+        run: make test
+
+      - name: Build action
+        run: make build
+
+      - name: Check for dist changes
+        id: check-changes
+        run: |
+          if [[ -n "$(git status --porcelain dist/index.js 2>/dev/null || true)" ]]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit dist changes
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist/index.js
+          git commit -m "🤖 chore: build dist/index.js [skip ci]"
+
+      - name: Push dist changes
+        if: steps.check-changes.outputs.changed == 'true'
+        run: git push

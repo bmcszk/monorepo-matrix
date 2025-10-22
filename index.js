@@ -1,15 +1,19 @@
-const core = require('@actions/core')
-const exec = require('@actions/exec')
-const github = require('@actions/github')
-const wcmatch = require('wildcard-match')
+const core = require('@actions/core');
+const exec = require('@actions/exec');
+const github = require('@actions/github');
+const wcmatch = require('wildcard-match');
 
 function parseMap(mapStr) {
+    if (!mapStr || typeof mapStr !== 'string') {
+        return {};
+    }
+
     let map = {};
     for (let entryStr of mapStr.split(/[\n;]+/)) {
         if (!entryStr.includes('->')) {
             continue;
         }
-        entryStr = entryStr.replace(/\s/g,'');
+        entryStr = entryStr.replace(/\s/g, '');
         let entry = entryStr.split('->', 2);
         let keys = entry[0].split('|');
         let vals = entry[1].split('|');
@@ -17,7 +21,7 @@ function parseMap(mapStr) {
             if (key === '') {
                 continue;
             }
-            map = {...map, [key]: vals};
+            map = { ...map, [key]: vals };
         }
     }
     return map;
@@ -48,21 +52,30 @@ function getWorkflowFile() {
 function getBranch() {
     if (process.env.GITHUB_HEAD_REF) {
         return process.env.GITHUB_HEAD_REF;
-    } else if (process.env.GITHUB_REF && !process.env.GITHUB_REF.startsWith('refs/tags')) {
-        const match = /refs\/heads\/(.*)/g.exec(process.env.GITHUB_REF);
+    } else if (
+        process.env.GITHUB_REF &&
+        !process.env.GITHUB_REF.startsWith('refs/tags')
+    ) {
+        const match = /refs\/heads\/(.*)/.exec(process.env.GITHUB_REF);
         return match ? match[1] : null;
     }
+    return null;
 }
 
 async function getLastSuccessfulRun(token) {
+    const { owner, repo } = github.context.repo;
+    if (!owner || !repo) {
+        throw new Error('GitHub context repository information not available');
+    }
+
     const octokit = github.getOctokit(token);
     const res = await octokit.rest.actions.listWorkflowRuns({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        status: "success",
+        owner: owner,
+        repo: repo,
+        status: 'success',
         branch: getBranch(),
         workflow_id: getWorkflowFile(),
-        per_page: 1
+        perPage: 1,
     });
     if (res.data.workflow_runs.length === 0) {
         throw new Error('No previous workflow run found');
@@ -77,7 +90,7 @@ async function getBefore(token) {
     try {
         return await getLastSuccessfulRun(token);
     } catch (error) {
-        console.log("getLastSuccessfulRun()", error.message);
+        console.log('getLastSuccessfulRun()', error.message);
     }
     if (payload.before) {
         console.log('last commit: ', payload.before);
@@ -95,6 +108,10 @@ function getAfter() {
 }
 
 async function fetchGitChanges(before, after) {
+    if (!before || !after) {
+        throw new Error('Both before and after commit references are required');
+    }
+
     let lines = [];
     const options = {
         listeners: {
@@ -103,8 +120,8 @@ async function fetchGitChanges(before, after) {
             },
             stderr: (data) => {
                 core.setFailed(data.toString());
-            }
-        }
+            },
+        },
     };
     await exec.exec('git', ['diff', before, after, '--name-only'], options);
     return lines;
@@ -133,11 +150,27 @@ async function run() {
     if (buildAll) {
         result = getAllValues(map);
     } else {
-        lines = await fetchGitChanges(await getBefore(token), getAfter());
+        const lines = await fetchGitChanges(await getBefore(token), getAfter());
         result = matchGitChanges(map, lines);
     }
     console.log('result', result);
     core.setOutput('result', JSON.stringify(result));
 }
 
-run();
+// Export functions for testing
+module.exports = {
+    parseMap,
+    getAllValues,
+    getWorkflowFile,
+    getBranch,
+    matchGitChanges,
+    fetchGitChanges,
+    getBefore,
+    getAfter,
+    run,
+};
+
+// Only run the action when this file is executed directly (not when imported for testing)
+if (require.main === module) {
+    run();
+}

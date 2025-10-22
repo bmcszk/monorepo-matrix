@@ -17,10 +17,9 @@ Checkout code before using the action.
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 ```
-`fetch-depth: 2` is required to fetch two last commits in the history of the monorepo. 
-(In some cases it is better to use `fetch-depth: 0`.)
+`fetch-depth: 0` is recommended to have all the changes from repo.
 
 ### Sample usage
 1. Sample action:
