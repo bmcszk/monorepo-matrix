@@ -55,6 +55,13 @@ Checkout code before using the action.
             service: ${{fromJson(needs.changes-matrix.outputs.result)}}
     ```
 
+    Or simple if condition:
+    ```yaml
+        if: contains(needs.changes-matrix.outputs.result, '"consumer"')
+        steps:
+          - name: Deploy consumer
+    ```
+
 2. The same but simpler:
     ```yaml
           - name: Create matrix
@@ -68,54 +75,7 @@ Checkout code before using the action.
                 services/producer -> producer
     ```
 
-3. Using `contains()` to check for specific modules:
-    ```yaml
-    jobs:
-      detect-changes:
-        runs-on: ubuntu-latest
-        outputs:
-          changed-services: ${{ steps.matrix.outputs.result }}
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v4
-            with:
-              fetch-depth: 0
-          - name: Create matrix
-            id: matrix
-            uses: bmcszk/monorepo-matrix@v1
-            with:
-              map: |-
-                services/consumer/** -> consumer
-                services/producer/** -> producer
-                docs/** -> docs
-
-      deploy-consumer:
-        needs: detect-changes
-        if: contains(needs.detect-changes.outputs.changed-services, '"consumer"')
-        runs-on: ubuntu-latest
-        steps:
-          - name: Deploy consumer
-            run: echo "Deploying consumer service"
-
-      deploy-producer:
-        needs: detect-changes
-        if: contains(needs.detect-changes.outputs.changed-services, '"producer"')
-        runs-on: ubuntu-latest
-        steps:
-          - name: Deploy producer
-            run: echo "Deploying producer service"
-
-      update-docs:
-        needs: detect-changes
-        if: contains(needs.detect-changes.outputs.changed-services, '"docs"')
-        runs-on: ubuntu-latest
-        steps:
-          - name: Update docs
-            run: echo "Updating documentation"
-    ```
-    This allows you to trigger specific jobs only when certain modules have changed.
-
-4. This returns `[ 'true' ]` if there are changes detected in path `helm`; and `[]` otherwise:
+3. This returns `[ 'true' ]` if there are changes detected in path `helm`; and `[]` otherwise:
     ```yaml
           - name: Create matrix
             id: changes-matrix
