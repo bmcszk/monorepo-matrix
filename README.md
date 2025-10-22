@@ -4,6 +4,7 @@
 The `monorepo-matrix` Github Action is checking git commits and detects changes in the given paths.
 
 ### Inputs
+- `github-token` - `${{ secrets.GITHUB_TOKEN }}` - Github token to access private repositories.
 - `build-all` - boolean flag to build all packages in monorepo. Default value is false.
 - `map` - list of paths and their owners (modules).
 
@@ -16,15 +17,15 @@ Checkout code before using the action.
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 ```
-`fetch-depth: 2` is required to fetch two last commits in the history of the monorepo. 
-(In some cases it is better to use `fetch-depth: 0`.)
+`fetch-depth: 0` is recommended to have all the changes from the repository.
+
 ### Sample usage
 1. Sample action:
     ```yaml
           - name: Create matrix
-            id: create-matrix
+            id: changes-matrix
             uses: bmcszk/monorepo-matrix@v1
             with:
               build-all: ${{ inputs.build-all }}
@@ -48,16 +49,23 @@ Checkout code before using the action.
 
     The output values can be used as build matrix:
     ```yaml
-        if: needs.create-matrix.outputs.result != '[]'
+        if: needs.changes-matrix.outputs.result != '[]'
         strategy:
           matrix:
-            service: ${{fromJson(needs.create-matrix.outputs.result)}}
+            service: ${{fromJson(needs.changes-matrix.outputs.result)}}
+    ```
+
+    Or simple if condition:
+    ```yaml
+        if: contains(needs.changes-matrix.outputs.result, '"consumer"')
+        steps:
+          - name: Deploy consumer
     ```
 
 2. The same but simpler:
     ```yaml
           - name: Create matrix
-            id: create-matrix
+            id: changes-matrix
             uses: bmcszk/monorepo-matrix@v1
             with:
               build-all: ${{ inputs.build-all }}
@@ -70,7 +78,7 @@ Checkout code before using the action.
 3. This returns `[ 'true' ]` if there are changes detected in path `helm`; and `[]` otherwise:
     ```yaml
           - name: Create matrix
-            id: create-matrix
+            id: changes-matrix
             uses: bmcszk/monorepo-matrix@v1
             with:
               build-all: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false'}}
