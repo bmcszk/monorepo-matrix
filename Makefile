@@ -45,4 +45,4 @@ check: lint test
 
 # Test the action locally
 local:
-	npx @github/local-action action.yaml index.js .env
+	node local-test.js

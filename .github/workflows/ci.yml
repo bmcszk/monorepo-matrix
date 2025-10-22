@@ -36,6 +36,9 @@ jobs:
       - name: Build action
         run: make build
 
+      - name: Run local integration test
+        run: make local
+
       - name: Check for dist changes
         id: check-changes
         run: |
